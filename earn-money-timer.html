@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pleasure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --neon:#00ff41;
+  --purple:#b44dff;
+  --gold:#ffd700;
+  --gold-dim:#ccaa00;
+  --card-bg:rgba(255,255,255,0.03);
+  --font:'Share Tech Mono',monospace;
+  --glow-neon:0 0 7px #00ff41,0 0 15px #00ff41,0 0 30px #00ff4180,0 0 60px #00ff4140;
+  --glow-gold:0 0 7px #ffd700,0 0 15px #ffd700,0 0 30px #ffd70080,0 0 60px #ffd70040;
+  --glow-purple:0 0 7px #b44dff,0 0 15px #b44dff,0 0 30px #b44dff80
+}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:var(--font);
+  background:#050510;
+  color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  position:relative
+}
+/* Ambient glow canvases */
+#bg-canvas,#particle-canvas{
+  position:fixed;inset:0;z-index:0;pointer-events:none
+}
+#particle-canvas{z-index:2}
+/* Grid overlay */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(0,255,65,0.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,255,65,0.05) 1px,transparent 1px);
+  background-size:60px 60px;
+  mask-image:radial-gradient(ellipse at center,black 25%,transparent 70%);
+  -webkit-mask-image:radial-gradient(ellipse at center,black 25%,transparent 70%)
+}
+/* Scan lines */
+@keyframes scan-scroll{0%{background-position:0 0}100%{background-position:0 100px}}
+.scanlines{
+  position:fixed;inset:0;z-index:9998;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 4px);
+  background-size:100% 4px;
+  animation:scan-scroll 4s linear infinite
+}
+/* Flicker */
+@keyframes flicker{0%,100%{opacity:1}3%{opacity:0.85}6%{opacity:1}27%{opacity:0.92}30%{opacity:1}73%{opacity:0.88}76%{opacity:1}91%{opacity:0.95}94%{opacity:1}}
+.flicker{animation:flicker 8s infinite}
+/* Pages */
+.page{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1;transition:opacity .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);padding:2rem}
+.page.hidden{opacity:0;transform:scale(0.92) translateY(10px);pointer-events:none}
+/* ===== PAGE 1 ===== */
+#page-input .title{
+  font-size:clamp(2rem,6vw,4rem);
+  color:var(--neon);text-shadow:var(--glow-neon);
+  letter-spacing:12px;text-transform:uppercase;margin-bottom:0.5rem;
+  animation:glitch 3.5s infinite
+}
+@keyframes glitch{
+  0%,81%,100%{transform:translate(0)}
+  82%{transform:translate(-3px,2px) skewX(-1deg)}
+  84%{transform:translate(3px,-1px) skewX(1deg)}
+  86%{transform:translate(-1px,2px)}
+  88%{transform:translate(0)}
+  92%{transform:translate(2px,-2px) skewX(-0.5deg)}
+  94%{transform:translate(-2px,1px) skewX(0.5deg)}
+  96%{transform:translate(0)}
+}
+/* Subtitle */
+.subtitle{
+  font-size:clamp(0.55rem,1.2vw,0.7rem);
+  color:rgba(255,255,255,0.2);text-transform:uppercase;
+  letter-spacing:8px;margin-bottom:1.5rem
+}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes glow-pulse{0%,100%{filter:drop-shadow(0 0 12px rgba(0,255,65,0.3)) drop-shadow(0 0 25px rgba(180,77,255,0.15))}50%{filter:drop-shadow(0 0 20px rgba(0,255,65,0.5)) drop-shadow(0 0 40px rgba(180,77,255,0.25))}}
+.dog-big{width:clamp(90px,22vw,160px);height:auto;margin-bottom:1.5rem;border-radius:16px;animation:float 5s ease-in-out infinite,glow-pulse 3.5s ease-in-out infinite}
+.dog-small{width:clamp(45px,9vw,72px);height:auto;border-radius:12px;animation:float 5s ease-in-out infinite,glow-pulse 3.5s ease-in-out infinite}
+.input-form{display:flex;flex-direction:column;gap:0.7rem;width:100%;max-width:380px;position:relative}
+.input-form::after{content:'';position:absolute;bottom:-0.6rem;left:50%;transform:translateX(-50%);width:50%;height:1px;background:linear-gradient(90deg,transparent,rgba(0,255,65,0.12),transparent)}
+.input-group{display:flex;align-items:center;gap:0.6rem;background:var(--card-bg);border:1px solid rgba(255,255,255,0.05);border-radius:8px;padding:0.3rem 0.7rem;transition:border-color .3s,background .3s}
+.input-group:focus-within{border-color:rgba(0,255,65,0.2);background:rgba(0,255,65,0.03)}
+.input-group label{font-size:clamp(0.55rem,1.1vw,0.65rem);color:rgba(255,255,255,0.3);min-width:70px;text-transform:uppercase;letter-spacing:2px;user-select:none;flex-shrink:0}
+.input-group input{flex:1;padding:0.5rem 0;min-width:0;background:transparent;border:none;border-radius:0;color:var(--neon);font-family:var(--font);font-size:clamp(0.8rem,1.8vw,0.95rem);outline:none;transition:color .2s}
+.input-group input:focus{color:#fff}
+.input-group input[type=number]{-moz-appearance:textfield}
+.input-group input[type=number]::-webkit-outer-spin-button,.input-group input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.input-group input[type=time]::-webkit-calendar-picker-indicator{filter:invert(0.7) sepia(1) hue-rotate(90deg);cursor:pointer}
+.btn-go{
+  margin-top:1.2rem;padding:0.7rem 3rem;width:100%;max-width:380px;
+  font-family:var(--font);font-size:clamp(0.85rem,2vw,1rem);
+  text-transform:uppercase;letter-spacing:10px;
+  color:var(--bg);background:var(--neon);
+  border:none;border-radius:8px;cursor:pointer;
+  box-shadow:0 0 20px rgba(0,255,65,0.15),0 0 40px rgba(0,255,65,0.05);
+  transition:all .3s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden
+}
+.btn-go:hover{box-shadow:0 0 30px rgba(0,255,65,0.3),0 0 60px rgba(0,255,65,0.1);transform:scale(1.02)}
+.btn-go:active{transform:scale(0.97)}
+.btn-go::after{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:conic-gradient(transparent,rgba(255,255,255,0.08),transparent 30%);animation:spin 4s linear infinite;opacity:0;transition:opacity .3s}
+.btn-go:hover::after{opacity:1}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* ===== PAGE 2 ===== */
+.result-container{display:flex;flex-direction:column;align-items:center;gap:0.8rem;width:100%;max-width:600px;position:relative}
+.result-container::before{content:'';position:absolute;inset:-1px;border-radius:20px;background:linear-gradient(135deg,rgba(0,255,65,0.05),rgba(180,77,255,0.03));pointer-events:none;z-index:-1}
+.result-top{display:flex;align-items:center;gap:clamp(1rem,3vw,2rem);width:100%;justify-content:center}
+.result-timer-area{display:flex;flex-direction:column;align-items:flex-start;gap:0.3rem}
+.status-badge{display:inline-flex;align-items:center;gap:8px;font-size:clamp(0.5rem,0.9vw,0.6rem);text-transform:uppercase;letter-spacing:4px;color:var(--neon);padding:4px 14px;border:1px solid rgba(0,255,65,0.2);border-radius:20px;background:rgba(0,255,65,0.04)}
+.status-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--neon);animation:pulse-dot 1.5s ease-in-out infinite}
+@keyframes pulse-dot{0%,100%{opacity:1;box-shadow:0 0 5px #00ff41}50%{opacity:0.4;box-shadow:none}}
+.timer-display{font-size:clamp(2.5rem,8vw,5rem);color:var(--neon);text-shadow:var(--glow-neon);letter-spacing:4px;line-height:1;animation:breathe 2.5s ease-in-out infinite}
+@keyframes breathe{0%,100%{text-shadow:var(--glow-neon)}50%{text-shadow:0 0 10px #00ff41,0 0 25px #00ff41,0 0 50px #00ff4180,0 0 80px #00ff4140}}
+.earnings-area{display:flex;flex-direction:column;align-items:center;gap:0.15rem;margin-top:0.3rem;position:relative}
+.earnings-area::before{content:'';position:absolute;top:50%;left:50%;width:clamp(200px,60vw,500px);height:clamp(80px,20vw,200px);transform:translate(-50%,-50%);background:radial-gradient(ellipse,rgba(255,215,0,0.06) 0%,transparent 70%);pointer-events:none}
+.earnings-label{font-size:clamp(0.65rem,1.3vw,0.8rem);color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:5px}
+.earnings-amount{font-size:clamp(2.2rem,7vw,4.2rem);color:var(--gold);text-shadow:var(--glow-gold);letter-spacing:2px;position:relative;transition:transform .15s}
+.earnings-amount .currency{font-size:clamp(0.9rem,2.5vw,1.5rem);color:var(--gold-dim);vertical-align:super}
+.earnings-amount .cents{font-size:clamp(1rem,3vw,1.8rem);opacity:0.7}
+#coin-canvas{position:fixed;inset:0;z-index:3;pointer-events:none}
+.btn-modify{margin-top:1.8rem;padding:0.45rem 1.8rem;font-family:var(--font);font-size:clamp(0.6rem,1.1vw,0.7rem);text-transform:uppercase;letter-spacing:5px;color:rgba(255,255,255,0.25);background:transparent;border:1px solid rgba(255,255,255,0.06);border-radius:20px;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1)}
+.btn-modify:hover{color:var(--neon);border-color:rgba(0,255,65,0.25);background:rgba(0,255,65,0.03);box-shadow:0 0 15px rgba(0,255,65,0.06)}
+@media(max-width:480px){
+  .page{padding:1.5rem}
+  .input-group{padding:0.2rem 0.6rem}
+  .input-group label{min-width:55px;font-size:0.5rem}
+  .result-top{flex-direction:column;gap:0.6rem}
+  .dog-small{margin-bottom:0.3rem}
+  .btn-go{letter-spacing:6px}
+}
+</style>
+</head>
+<body>
+
+<div class="scanlines"></div>
+<canvas id="bg-canvas"></canvas>
+<canvas id="particle-canvas"></canvas>
+<canvas id="coin-canvas"></canvas>
+
+<!-- ===== PAGE 1 ===== -->
+<div id="page-input" class="page">
+  <div class="title flicker">pleasure</div>
+  <div class="subtitle">work timer</div>
+
+  <img class="dog-big" src="generated-images/A_cool__stylish_dog_wearing_av_2026-06-11T04-28-05.png" alt="Cool cyberpunk dog">
+
+  <div class="input-form">
+    <div class="input-group">
+      <label>salary&#8195;&yen;</label>
+      <input type="number" id="monthly-salary" value="27000" min="0" step="100">
+    </div>
+    <div class="input-group">
+      <label>on duty</label>
+      <input type="time" id="on-duty" value="09:30">
+    </div>
+    <div class="input-group">
+      <label>off duty</label>
+      <input type="time" id="off-duty" value="19:00">
+    </div>
+    <div class="input-group">
+      <label>work days</label>
+      <input type="number" id="work-days" min="1" max="31">
+    </div>
+  </div>
+
+  <button class="btn-go" id="btn-go">GO !!</button>
+</div>
+
+<!-- ===== PAGE 2 ===== -->
+<div id="page-result" class="page hidden">
+  <div class="result-container">
+    <div class="result-top">
+      <img class="dog-small" src="generated-images/A_cool__stylish_dog_wearing_av_2026-06-11T04-28-05.png" alt="Cool cyberpunk dog">
+
+      <div class="result-timer-area">
+        <div class="status-badge">
+          <span class="dot"></span>
+          live
+        </div>
+        <div class="timer-display" id="timer">00:00:00</div>
+      </div>
+    </div>
+
+    <div class="earnings-area" id="earnings-area">
+      <div class="earnings-label">I earned</div>
+      <div class="earnings-amount">
+        <span class="currency">&#165;</span>
+        <span id="earnings-int">0</span><span class="cents" id="earnings-cents">.00</span>
+      </div>
+    </div>
+
+    <button class="btn-modify" id="btn-modify">&larr; modify</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ───────────────── DOM refs ───────────────── */
+  const pageInput = document.getElementById('page-input');
+  const pageResult = document.getElementById('page-result');
+  const inpSalary = document.getElementById('monthly-salary');
+  const inpOnDuty = document.getElementById('on-duty');
+  const inpOffDuty = document.getElementById('off-duty');
+  const inpWorkDays = document.getElementById('work-days');
+  const btnGo = document.getElementById('btn-go');
+  const btnModify = document.getElementById('btn-modify');
+  const timerEl = document.getElementById('timer');
+  const earningsInt = document.getElementById('earnings-int');
+  const earningsCents = document.getElementById('earnings-cents');
+
+  /* ───────────────── State ───────────────── */
+  let monthlySalary = 27000;
+  let onDutyMin = 9*60+30;
+  let offDutyMin = 19*60;
+  let workDays = 21;
+  let msWage = 0;
+  let timerInterval = null;
+  let running = false;
+  let displayEarnings = 0;
+  let realEarnings = 0;
+  let animFrameId = null;
+
+  const LUNCH_START = 12*60;
+  const LUNCH_END   = 13*60+30;
+
+  /* ───────────────── Working Days ───────────────── */
+  function calcWorkingDays() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    let count = 0;
+    for (let d = 1; d <= daysInMonth; d++) {
+      const day = new Date(year, month, d).getDay();
+      if (day !== 0 && day !== 6) count++;
+    }
+    return count;
+  }
+  inpWorkDays.value = calcWorkingDays();
+
+  function timeToMinutes(val) {
+    const parts = val.split(':');
+    return parseInt(parts[0],10) * 60 + parseInt(parts[1],10);
+  }
+  function getTodayAtMinutes(minutes) {
+    const d = new Date();
+    d.setHours(Math.floor(minutes/60), minutes%60, 0, 0);
+    return d;
+  }
+
+  /* ───────────────── Core Calculation ───────────────── */
+  function calcEffectiveWorkMs(nowMs, onDutyMs, offDutyMs) {
+    const now = new Date(nowMs);
+    const on = new Date(onDutyMs);
+    const off = new Date(offDutyMs);
+    if (now <= on) return 0;
+    if (now >= off) {
+      const morning = Math.max(0, Math.min(off, getTodayAtMinutes(LUNCH_START)) - on);
+      const afternoon = Math.max(0, off - getTodayAtMinutes(LUNCH_END));
+      return morning + afternoon;
+    }
+    const lunchStartDt = getTodayAtMinutes(LUNCH_START);
+    const lunchEndDt = getTodayAtMinutes(LUNCH_END);
+    let total = 0;
+    if (now > on) {
+      const morningEnd = now < lunchStartDt ? now : lunchStartDt;
+      total += Math.max(0, morningEnd - on);
+    }
+    if (now > lunchEndDt) {
+      total += Math.max(0, now - lunchEndDt);
+    }
+    return total;
+  }
+  function getTodayMs() {
+    const d = new Date();
+    d.setHours(0,0,0,0);
+    return d.getTime();
+  }
+
+  /* ───────────────── Timer & Smooth Earnings Update ───────────────── */
+  function updateEarnings() {
+    if (!running) return;
+
+    const nowMs = Date.now();
+    const todayStart = getTodayMs();
+    const onMs = todayStart + onDutyMin * 60 * 1000;
+    const offMs = todayStart + offDutyMin * 60 * 1000;
+    const effectiveMs = calcEffectiveWorkMs(nowMs, onMs, offMs);
+    realEarnings = effectiveMs * msWage;
+
+    // Smooth lerp toward real value — gives that fluid feel
+    displayEarnings += (realEarnings - displayEarnings) * 0.08;
+    if (Math.abs(displayEarnings - realEarnings) < 0.001) {
+      displayEarnings = realEarnings;
+    }
+
+    // Timer display
+    const totalSec = Math.floor(effectiveMs / 1000);
+    const hh = String(Math.floor(totalSec / 3600)).padStart(2,'0');
+    const mm = String(Math.floor((totalSec % 3600) / 60)).padStart(2,'0');
+    const ss = String(totalSec % 60).padStart(2,'0');
+    timerEl.textContent = `${hh}:${mm}:${ss}`;
+
+    // Split earnings into integer + cents for styled display
+    const parts = displayEarnings.toFixed(2).split('.');
+    earningsInt.textContent = parts[0];
+    earningsCents.textContent = '.' + parts[1];
+
+    animFrameId = requestAnimationFrame(updateEarnings);
+  }
+
+  function startTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    running = true;
+    displayEarnings = 0;
+    realEarnings = 0;
+    updateEarnings();
+    // Fallback timer to ensure data freshness even if rAF is throttled
+    timerInterval = setInterval(() => {
+      if (!running) return;
+    }, 200);
+  }
+  function stopTimer() {
+    running = false;
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
+  }
+
+  /* ───────────────── Navigation ───────────────── */
+  function goToResult() {
+    monthlySalary = parseFloat(inpSalary.value) || 0;
+    workDays = parseInt(inpWorkDays.value) || 21;
+    onDutyMin = timeToMinutes(inpOnDuty.value);
+    offDutyMin = timeToMinutes(inpOffDuty.value);
+    msWage = workDays > 0 ? (monthlySalary / workDays / 8) / 3600000 : 0;
+
+    pageInput.classList.add('hidden');
+    pageResult.classList.remove('hidden');
+
+    startBgCanvas();
+    startTimer();
+    startParticles();
+  }
+  function goToInput() {
+    stopTimer();
+    stopParticles();
+    stopBgCanvas();
+    pageResult.classList.add('hidden');
+    pageInput.classList.remove('hidden');
+    inpWorkDays.value = calcWorkingDays();
+  }
+  btnGo.addEventListener('click', goToResult);
+  btnModify.addEventListener('click', goToInput);
+  document.querySelectorAll('.input-form input').forEach(el => {
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') goToResult(); });
+  });
+
+  /* ════════════════════════════════════════════
+     BACKGROUND — Animated Aurora & Starfield
+     ════════════════════════════════════════════ */
+  const bgCanvas = document.getElementById('bg-canvas');
+  const bgCtx = bgCanvas.getContext('2d');
+  let bgRunning = false;
+  let bgAnimId = null;
+  let stars = [];
+  let auroraTime = 0;
+
+  function initBg() {
+    bgCanvas.width = window.innerWidth;
+    bgCanvas.height = window.innerHeight;
+    stars = [];
+    const count = Math.min(120, Math.floor(bgCanvas.width * bgCanvas.height / 8000));
+    for (let i = 0; i < count; i++) {
+      stars.push({
+        x: Math.random() * bgCanvas.width,
+        y: Math.random() * bgCanvas.height,
+        r: 0.5 + Math.random() * 1.5,
+        speed: 0.05 + Math.random() * 0.15,
+        opacity: 0.3 + Math.random() * 0.7
+      });
+    }
+  }
+  window.addEventListener('resize', () => { if (bgRunning) initBg(); });
+
+  function drawBg() {
+    if (!bgRunning) return;
+    bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+
+    auroraTime += 0.003;
+
+    // Aurora gradient orbs
+    const cx = bgCanvas.width / 2;
+    const cy = bgCanvas.height / 2;
+
+    // Orb 1 — deep purple, slow drift
+    const ox1 = cx + Math.sin(auroraTime * 0.7) * bgCanvas.width * 0.15;
+    const oy1 = cy * 0.7 + Math.cos(auroraTime * 0.5) * bgCanvas.height * 0.1;
+    const g1 = bgCtx.createRadialGradient(ox1, oy1, 0, ox1, oy1, bgCanvas.width * 0.4);
+    g1.addColorStop(0, 'rgba(100,30,200,0.06)');
+    g1.addColorStop(0.5, 'rgba(60,10,140,0.03)');
+    g1.addColorStop(1, 'transparent');
+    bgCtx.fillStyle = g1;
+    bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
+
+    // Orb 2 — neon green, drifts opposite
+    const ox2 = cx + Math.sin(auroraTime * 0.5 + 2) * bgCanvas.width * 0.2;
+    const oy2 = cy * 1.3 + Math.cos(auroraTime * 0.6 + 1) * bgCanvas.height * 0.1;
+    const g2 = bgCtx.createRadialGradient(ox2, oy2, 0, ox2, oy2, bgCanvas.width * 0.35);
+    g2.addColorStop(0, 'rgba(0,255,65,0.05)');
+    g2.addColorStop(0.5, 'rgba(0,180,40,0.025)');
+    g2.addColorStop(1, 'transparent');
+    bgCtx.fillStyle = g2;
+    bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
+
+    // Orb 3 — cyan accent, subtle
+    const ox3 = cx * 1.4 + Math.sin(auroraTime * 0.4 + 3) * bgCanvas.width * 0.12;
+    const oy3 = cy * 0.5 + Math.cos(auroraTime * 0.8) * bgCanvas.height * 0.08;
+    const g3 = bgCtx.createRadialGradient(ox3, oy3, 0, ox3, oy3, bgCanvas.width * 0.25);
+    g3.addColorStop(0, 'rgba(0,200,255,0.04)');
+    g3.addColorStop(1, 'transparent');
+    bgCtx.fillStyle = g3;
+    bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
+
+    // Stars
+    for (const s of stars) {
+      const twinkle = 0.6 + 0.4 * Math.sin(auroraTime * 3 + s.x * 0.1 + s.y * 0.1);
+      bgCtx.beginPath();
+      bgCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      bgCtx.fillStyle = `rgba(255,255,255,${s.opacity * twinkle * 0.4})`;
+      bgCtx.fill();
+    }
+
+    // Subtle horizontal light band
+    const bandY = cy * 0.7 + Math.sin(auroraTime * 0.2) * 50;
+    const bandG = bgCtx.createLinearGradient(0, bandY - 60, 0, bandY + 60);
+    bandG.addColorStop(0, 'transparent');
+    bandG.addColorStop(0.4, 'rgba(180,77,255,0.015)');
+    bandG.addColorStop(0.5, 'rgba(180,77,255,0.025)');
+    bandG.addColorStop(0.6, 'rgba(180,77,255,0.015)');
+    bandG.addColorStop(1, 'transparent');
+    bgCtx.fillStyle = bandG;
+    bgCtx.fillRect(0, bandY - 60, bgCanvas.width, 120);
+
+    bgAnimId = requestAnimationFrame(drawBg);
+  }
+
+  function startBgCanvas() {
+    if (bgRunning) return;
+    bgRunning = true;
+    initBg();
+    drawBg();
+  }
+  function stopBgCanvas() {
+    bgRunning = false;
+    if (bgAnimId) { cancelAnimationFrame(bgAnimId); bgAnimId = null; }
+    bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+  }
+
+  /* ════════════════════════════════════════════
+     COIN PARTICLE SYSTEM — Realistic physics
+     ════════════════════════════════════════════ */
+  const coinCanvas = document.getElementById('coin-canvas');
+  const coinCtx = coinCanvas.getContext('2d');
+  let coins = [];
+  let sparkles = [];
+  let coinRunning = false;
+  let coinAnimId = null;
+
+  function resizeCoinCanvas() {
+    coinCanvas.width = window.innerWidth;
+    coinCanvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCoinCanvas);
+  resizeCoinCanvas();
+
+  const COIN_COLORS = ['#ffd700','#ffaa00','#ffe44d','#ffcc00','#ffbb33','#ffee88'];
+
+  function createCoin() {
+    const area = document.getElementById('earnings-area');
+    const rect = area.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+
+    const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 0.9;
+    const speed = 3 + Math.random() * 6;
+    const size = 6 + Math.random() * 14;
+
+    return {
+      x: cx + (Math.random() - 0.5) * 100,
+      y: cy + (Math.random() - 0.5) * 30,
+      vx: Math.cos(angle) * speed * (0.6 + Math.random() * 0.6),
+      vy: Math.sin(angle) * speed - 3 - Math.random() * 3,
+      size: size,
+      halfSize: size / 2,
+      color: COIN_COLORS[Math.floor(Math.random() * COIN_COLORS.length)],
+      life: 1,
+      decay: 0.005 + Math.random() * 0.008,
+      rotation: 0,
+      rotSpeed: (Math.random() - 0.5) * 0.15,
+      // 3D squash factor for rotation illusion
+      squash: 1,
+      squashSpeed: (Math.random() - 0.5) * 0.03,
+      // Trail
+      trail: [],
+      maxTrail: 4,
+      // Glow
+      glowPulse: Math.random() * Math.PI * 2
+    };
+  }
+
+  function createSparkle(x, y, color) {
+    return {
+      x: x + (Math.random() - 0.5) * 20,
+      y: y + (Math.random() - 0.5) * 20,
+      vx: (Math.random() - 0.5) * 2,
+      vy: (Math.random() - 0.5) * 2 - 1,
+      size: 1 + Math.random() * 2.5,
+      life: 1,
+      decay: 0.03 + Math.random() * 0.04,
+      color: color
+    };
+  }
+
+  function drawCoin(ctx, p) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rotation);
+    ctx.scale(1, p.squash);
+
+    const r = p.halfSize;
+    const alpha = p.life;
+
+    // Glow
+    ctx.globalAlpha = alpha * 0.3;
+    const glow = ctx.createRadialGradient(0, 0, r * 0.5, 0, 0, r * 2.5);
+    glow.addColorStop(0, p.color);
+    glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 2.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Coin body
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    const grad = ctx.createRadialGradient(-r*0.3, -r*0.3, r*0.1, 0, 0, r);
+    grad.addColorStop(0, '#fffbe6');
+    grad.addColorStop(0.2, p.color);
+    grad.addColorStop(0.7, p.color);
+    grad.addColorStop(1, '#b8860b');
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Rim
+    ctx.strokeStyle = `rgba(255,255,200,${alpha * 0.6})`;
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    // Inner ring
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.65, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(255,215,0,${alpha * 0.3})`;
+    ctx.lineWidth = 0.6;
+    ctx.stroke();
+
+    // Star / sparkle in center
+    ctx.globalAlpha = alpha * 0.5 * (0.6 + 0.4 * Math.sin(p.glowPulse * 2));
+    ctx.beginPath();
+    const starR = r * 0.25;
+    for (let i = 0; i < 5; i++) {
+      const a = (i * 2 * Math.PI / 5) - Math.PI / 2;
+      const outer = i === 0 ? starR : starR;
+      const inner = starR * 0.4;
+      ctx[i === 0 ? 'moveTo' : 'lineTo'](Math.cos(a) * outer, Math.sin(a) * outer);
+      ctx.lineTo(Math.cos(a + Math.PI / 5) * inner, Math.sin(a + Math.PI / 5) * inner);
+    }
+    ctx.closePath();
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+
+    // Edge highlight
+    ctx.globalAlpha = alpha * 0.2;
+    ctx.beginPath();
+    ctx.arc(-r*0.3, -r*0.3, r*0.4, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+
+    ctx.restore();
+
+    // Small sparkle burst on bright coins
+    if (Math.random() < 0.02 && p.life > 0.5) {
+      sparkles.push(createSparkle(p.x, p.y, p.color));
+    }
+  }
+
+  function updateCoins() {
+    if (!coinRunning) return;
+    coinCtx.clearRect(0, 0, coinCanvas.width, coinCanvas.height);
+
+    // Spawn
+    for (let i = 0; i < 3; i++) {
+      const c = createCoin();
+      coins.push(c);
+      // Spawn sparkles on creation
+      for (let j = 0; j < 3; j++) {
+        sparkles.push(createSparkle(c.x, c.y, c.color));
+      }
+    }
+
+    // Update & draw coins
+    for (let i = coins.length - 1; i >= 0; i--) {
+      const p = coins[i];
+
+      // Store trail
+      p.trail.push({ x: p.x, y: p.y });
+      if (p.trail.length > p.maxTrail) p.trail.shift();
+
+      // Physics
+      p.vx *= 0.995; // air friction
+      p.vy += 0.08;   // gravity
+      p.vy *= 0.998;  // air friction
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rotation += p.rotSpeed;
+      p.squash = 0.7 + 0.3 * Math.abs(Math.cos(p.rotation * 2));
+      p.life -= p.decay;
+      p.glowPulse += 0.05;
+
+      if (p.life <= 0 || p.y > coinCanvas.height + 50) {
+        coins.splice(i, 1);
+        continue;
+      }
+
+      // Draw trail
+      for (let t = 0; t < p.trail.length; t++) {
+        const alpha = (t / p.trail.length) * p.life * 0.15;
+        coinCtx.beginPath();
+        coinCtx.arc(p.trail[t].x, p.trail[t].y, p.halfSize * 0.5 * (t / p.trail.length), 0, Math.PI * 2);
+        coinCtx.fillStyle = p.color;
+        coinCtx.globalAlpha = alpha;
+        coinCtx.fill();
+      }
+
+      drawCoin(coinCtx, p);
+    }
+
+    // Update & draw sparkles
+    for (let i = sparkles.length - 1; i >= 0; i--) {
+      const s = sparkles[i];
+      s.x += s.vx;
+      s.y += s.vy;
+      s.vy += 0.02;
+      s.life -= s.decay;
+      if (s.life <= 0) { sparkles.splice(i, 1); continue; }
+      coinCtx.globalAlpha = s.life * 0.6;
+      coinCtx.beginPath();
+      coinCtx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+      coinCtx.fillStyle = '#ffffff';
+      coinCtx.fill();
+    }
+
+    coinCtx.globalAlpha = 1;
+
+    // Cap
+    if (coins.length > 300) coins.splice(0, coins.length - 300);
+    if (sparkles.length > 100) sparkles.splice(0, sparkles.length - 100);
+
+    coinAnimId = requestAnimationFrame(updateCoins);
+  }
+
+  function startParticles() {
+    if (coinRunning) return;
+    coins = [];
+    sparkles = [];
+    coinRunning = true;
+    resizeCoinCanvas();
+    updateCoins();
+  }
+  function stopParticles() {
+    coinRunning = false;
+    if (coinAnimId) { cancelAnimationFrame(coinAnimId); coinAnimId = null; }
+    coins = [];
+    sparkles = [];
+    coinCtx.clearRect(0, 0, coinCanvas.width, coinCanvas.height);
+  }
+
+  console.log('[pleasure] worker timer — enhanced');
+})();
+</script>
+</body>
+</html>
